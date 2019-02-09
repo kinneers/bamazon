@@ -19,14 +19,15 @@ var connection = mysql.createConnection({
 
 connection.connect(function(err) {
     if (err) throw err;
+    showMenu();
 });
 
 function showMenu() {
     inquirer.prompt([
         {
             type: 'list',
-            choices: ['View Products for Sale', 'View Low Inventory', 'Add to Inventory', 'Add New Product'],
-            message: "Welcome! What would you like to accomplish?",
+            choices: ['View Products for Sale', 'View Low Inventory', 'Add to Inventory', 'Add New Product', 'Exit'],
+            message: "What would you like to accomplish?",
             name: 'menu'
         }
     ]).then(function(res) {
@@ -44,12 +45,15 @@ function showMenu() {
             case 'Add New Product':
                 addProduct();
                 break;
+            case 'Exit':
+                console.log("\nHave a great day!\n");
+                connection.end();
+                break;
             default:
                 console.log("This command was not recognized.");
         }
     })
 }
-showMenu();
 
 var divider = "\n-------------------------------------------------------------\n";
 
@@ -85,7 +89,7 @@ var productName;
 var addStock = 0;
 var currentStock = 0;
 
-//If a manager selects Add to Inventory, the app displays a prompt that will let the manager "add more" of any item currently in the store.
+//If a manager selects Add to Inventory, the app displays a prompt that will let the manager "add more" of any item currently in the store
 function addInventory() {
     //Gather an array or all possible IDs for validation purposes
     connection.query("SELECT * FROM products", function(err, res) {
@@ -158,7 +162,71 @@ function promptQuantity() {
     });    
 }
 
+//Regex to check for decimal value
+var decCheck = /^\d+(\.\d{0,2})?$/
+
+//Allows the manager to add a completely new product to the store
 function addProduct() {
-    console.log("Make addProduct Function Here");
-    //If a manager selects Add New Product, it should allow the manager to add a completely new product to the store.
+    inquirer.prompt([
+        {
+            type: "input",
+            message: "What is the name of the new product? ",
+            name: "newName",
+            validate: function(value) {
+                if (value === '') {
+                    console.log("Please enter a product name.");
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+        },
+        {
+            type: "input",
+            message: "To what department does the new product belong? ",
+            name: "newDept",
+            validate: function(value) {
+                if (value === '') {
+                    console.log("Please enter a department.");
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+        }, 
+        {
+            type: "input",
+            message: "Enter the product price (no dollar sign): ",
+            name: "newPrice",
+            validate: function(value) {
+                if (decCheck.test(value)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        },
+        {
+            type: "input",
+            message: "Enter the number of product in stock: ",
+            name: "newStock",
+            validate: function(value) {
+                if (numTest.test(value)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+    ]).then(function(res) {
+        var prod = res.newName;
+        var dept = res.newDept;
+        var prodPrice = parseFloat(res.newPrice);
+        var quant = parseInt(res.newStock);
+        connection.query('INSERT INTO products (product_name, department_name, price, stock_quantity) VALUES("' + prod + '", "' + dept + '", ' + prodPrice + ', ' + quant + ');', function(err, res) {
+        if (err) throw err;
+        console.log("\nStore Updated! \nProduct: " + prod + "\nDepartment: " + dept + "\nPrice: $" + prodPrice + "\nQuantity: " + quant + "\n");
+        showMenu();
+        });
+    });      
 }
