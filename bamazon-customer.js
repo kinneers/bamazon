@@ -50,7 +50,7 @@ var possibleIDs = [];
 
 //Generates an initial list of items for sale in the store
 function listItems() {
-    console.log('Here is a list of products available today: ');
+    console.log('\nHere is a list of products available today: ');
     connection.query("SELECT * FROM products", function(err, res) {
         if (err) throw err;
         // Log items for sale in readable format
@@ -156,14 +156,52 @@ function fulfill() {
             }
         ],
         function(err, res) {
-            console.log("Thank you for your order!");
-            showTotal();
-      }
+            var total = buyNumber * price;
+            //Gets the product_sales amount prior to the transaction
+            connection.query("SELECT product_sales FROM products WHERE item_id = " + itemNum, function(err, res) {
+                if (err) throw err;
+                var currentSales = res[0].product_sales;
+                completeSale(itemNum, currentSales, total);
+            });
+            //Displays the total cost of the customer's purchase
+            console.log("Thank you for your order! \nYour total comes to: $" + total + "\n");
+        }
     );
 }
 
-//Displays the total cost of the customer's purchase
-function showTotal() {
-    var total = buyNumber * price;
-    console.log("Your total comes to: $" + total + "\n");
+//
+function completeSale(itemNum, currentSales, total) {
+    var newSales = currentSales + total;
+    connection.query("UPDATE products SET ? WHERE ?",
+        [
+            {
+                product_sales: newSales
+            },
+            {
+                item_id: itemNum
+            }
+        ],
+        function(err, res) {
+            buyAgain();
+        }
+    );
+}
+
+//Prompts for customer who has made a purchase
+function buyAgain() {
+    inquirer.prompt([
+        {
+            type: 'list',
+            choices: ["Yes, please", 'No, thanks'],
+            message: "Would you like to make another purchase?",
+            name: 'show'
+        }
+    ]).then(function(res) {
+        if (res.show === "Yes, please") {
+            listItems();
+        } else {
+            console.log('\nThank you for shopping with us, have a lovely day!\n');
+            connection.end();
+        }
+    })
 }
