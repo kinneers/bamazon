@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/kinneers/bamazon#readme",
   "dependencies": {
-    "inquirer": "^6.2.2"
+    "dotenv": "^6.2.0",
+    "inquirer": "^6.2.2",
+    "mysql": "^2.16.0"
   }
 }
