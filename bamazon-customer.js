@@ -19,9 +19,29 @@ var connection = mysql.createConnection({
 
 connection.connect(function(err) {
     if (err) throw err;
-    console.log("connected as id " + connection.threadId + "\n");
-    listItems();
 });
+
+//Welcomes the user to the app before initially listing items
+function welcome () {
+    console.log("\nWelcome to the Bamazon Store!\n");
+    inquirer.prompt([
+        {
+            type: 'list',
+            choices: ["See Today's Product List", 'Exit'],
+            message: "What would you like to do today?",
+            name: 'show'
+        }
+    ]).then(function(res) {
+        if (res.show === "See Today's Product List") {
+            listItems();
+        } else {
+            console.log('\nWe are sad to see you go and hope to see you again soon!\n');
+            connection.end();
+        }
+    })
+}
+
+welcome();
 
 //Divider used for neater output in terminal
 var divider = "\n-------------------------------------------------------------\n";
@@ -31,7 +51,7 @@ var possibleIDs = [];
 
 //Generates an initial list of items for sale in the store
 function listItems() {
-    console.log('Welcome to the Bamazon store!  Here is a list of products available today:');
+    console.log('Here is a list of products available today: ');
     connection.query("SELECT * FROM products", function(err, res) {
         if (err) throw err;
         // Log items for sale in readable format
@@ -43,10 +63,13 @@ function listItems() {
     });
 }
 
-
-/* THIS IS WHERE I GOT TIRED AND PROBABLY NEED TO START OVER FROM
+//Initialize global variables
 var chosenProduct;
 var stock = 0;
+var itemNum = 0;
+var price = 0;
+var newQuantity;
+
 //Prompts the user to enter the ID of product to be purchased
 function promptUser() {
     inquirer.prompt([
@@ -63,47 +86,85 @@ function promptUser() {
             }
         }
     ]).then(function(res) {
-        var itemNum = res.buyID;
+        itemNum = res.buyID;
         console.log(itemNum);
-        
-        connection.query("SELECT product_name FROM products WHERE item_id = " + itemNum, function(err, res) {
-            if (err) throw err;
-            //Finds the name of the chosen product
-            chosenProduct = res[0].product_name;
-            return chosenProduct;
+        //Finds the name of the chosen product
+        connection.query("SELECT product_name, stock_quantity, price FROM products WHERE item_id = " + itemNum, function(err, res) {
+        if (err) throw err;
+        chosenProduct = res[0].product_name;
+        stock = res[0].stock_quantity;
+        price = res[0].price;
+        promptAmount(chosenProduct);
         });
-        connection.query("SELECT stock_quanitiy FROM products WHERE item_id = " + itemNum, function(err, res) {
-            if (err) throw err;
-            //Finds the stock available of chosen product
-            stock = res[0].stock_quantity;
-            return stock;
-        });
-        inquirer.prompt([
-            {
-                type: "input",
-                message: "Please enter the number of " + chosenProduct + " you would like to purchase",
-                name: "purchaseNum",
-                validate: function(value) {
-                    if (stock === NaN) {
-                        return false;
-                    } else {
-                        return true;
-                    }
+    })
+}
+
+//Regex to test if string contains only numbers
+var numTest = /^[0-9]*$/
+//Initializes quantity to buy globally
+var buyNumber = 0;
+
+//Gathers the amount of the chosen product the buyer would like to purchase
+function promptAmount(chosenProduct) {
+    inquirer.prompt([
+        {
+            type: "NumberPrompt",
+            message: "Please enter the number of " + chosenProduct + " you would like to purchase: ",
+            name: "purchaseNum",
+            validate: function(value) {
+                if (numTest.test(value)) {
+                    return true;
+                } else {
+                    return false;
                 }
             }
-        ]).then(function(res) {
-            var buyNumber = res.purchaseNum;
-            console.log(buyNumber);
-        //    connection.query("SELECT product_name FROM products WHERE item_id = " + itemNum, function(err, res) {
-            //      if (err) throw err;
-            //    chosenProduct = res[0].product_name;
-                
-        });
-    
+        }
+    ]).then(function(res) {
+        buyNumber = parseInt(res.purchaseNum);
+        if (buyNumber <= stock) {
+            newQuantity = stock - buyNumber;
+            fulfill();
+        } else {
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    choices: ['Try Again', 'Exit'],
+                    message: "Insufficient quantity in store.  Would you like to try again?",
+                    name: 'again'
+                }
+            ]).then(function(res) {
+                if (res.again === 'Try Again') {
+                    listItems();
+                } else {
+                    console.log('\nWe are sad to see you go and hope to see you again soon!\n');
+                    connection.end();
+                }
+            })
+        }
     });
 }
 
-//Prompts the user to enter how many of the product they would like to purchase
-*/
+//Updates the SQL database to show stock remaining when customer order is fulfilled
+function fulfill() {
+    console.log("\nProcessing Your Order.......\n");
+    connection.query("UPDATE products SET ? WHERE ?",
+        [
+            {
+                stock_quantity: newQuantity
+            },
+            {
+                item_id: itemNum
+            }
+        ],
+        function(err, res) {
+            console.log("Thank you for your order!\n");
+            showTotal();
+      }
+    );
+}
 
-//connection.end();
+//Displays the total cost of the customer's purchase
+function showTotal() {
+    var total = buyNumber * price;
+    console.log("Your total comes to: $" + total);
+}
