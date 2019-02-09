@@ -40,7 +40,6 @@ function welcome () {
         }
     })
 }
-
 welcome();
 
 //Divider used for neater output in terminal
@@ -88,7 +87,7 @@ function promptUser() {
     ]).then(function(res) {
         itemNum = res.buyID;
         console.log(itemNum);
-        //Finds the name of the chosen product
+        //Uses the id to gather the name of the chosen product, current number in stock, and price
         connection.query("SELECT product_name, stock_quantity, price FROM products WHERE item_id = " + itemNum, function(err, res) {
         if (err) throw err;
         chosenProduct = res[0].product_name;
@@ -157,7 +156,7 @@ function fulfill() {
             }
         ],
         function(err, res) {
-            console.log("Thank you for your order!\n");
+            console.log("Thank you for your order!");
             showTotal();
       }
     );
@@ -166,5 +165,5 @@ function fulfill() {
 //Displays the total cost of the customer's purchase
 function showTotal() {
     var total = buyNumber * price;
-    console.log("Your total comes to: $" + total);
+    console.log("Your total comes to: $" + total + "\n");
 }
