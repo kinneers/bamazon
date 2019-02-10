@@ -58,25 +58,28 @@ function selectData() {
             dptOverhead.push(res[i].over_head_costs.toFixed(2).toString());
         }
         getProdSales();
+        
     }); 
 }
 
-
-//THIS IS WHERE THINGS ARE GETTING INTERESTING!!!
+//THIS IS WHERE THINGS ARE GETTING INTERESTING!!! NOT WORKING YET...
 function getProdSales() {
-
-    //I think I need to be using GROUP BY and getting SUM here somehow... not sure how yet...
-
+    
     for (var x = 0; x < dptName.length; x++) {
         var query = (dptName[x]);
-        connection.query('SELECT product_sales FROM products WHERE department_name = "' + query + '"', function(err, res) {
-            if (err) throw err;
-            
-            
-        })
-        calculateTotalSales();
+    //Gets the sum of each department, but not necessarily in the order I need...
+    connection.query('WITH temporary_name AS (SELECT department_name, SUM(product_sales) FROM products GROUP BY department_name) SELECT * FROM temporary_name WHERE department_name = "' + query + '";', function(err, res) {
+        if (err) throw err;
+        console.log(res);
+        dptProdSales.push(res[x].val('SUM(product_sales)'));
+        })        
     }
+
+    //Need to find where this goes to continue sequence in sync
+    calculateTotalSales();
 }
+
+
 
 //Function to calculate sales and place in arrays for display as table
 function calculateTotalSales() {
