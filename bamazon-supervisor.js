@@ -14,8 +14,9 @@ var connection = mysql.createConnection({
 
 connection.connect(function(err) {
     if (err) throw err;
-    showMenu();
-})
+        showMenu();
+    })
+
 
 //Prompts supervisor action
 function showMenu() {
@@ -38,10 +39,8 @@ function showMenu() {
     })
 }
 
-//Initializes data array with column headings; data for each row will be populated and pushed to an array which will in turn be pushed to this array for display
-var data = [['department_id', 'department_name', 'over_head_costs', 'product_sales', 'total_profit']];
-
 //Global Variables for Table Data
+var data = [];
 var dptID = [];
 var dptName = [];
 var dptOverhead = [];
@@ -57,28 +56,41 @@ function selectData() {
             dptName.push(res[i].department_name);
             dptOverhead.push(res[i].over_head_costs.toFixed(2).toString());
         }
+        //Initializes data array with column headings; data for each row will be populated and pushed to an array which will in turn be pushed to this array for display
+        data = [['department_id', 'department_name', 'over_head_costs', 'product_sales', 'total_profit']];
         getProdSales();
         
     }); 
 }
 
-//THIS IS WHERE THINGS ARE GETTING INTERESTING!!! NOT WORKING YET...
+//Many thanks to Billy the SQL-izer for helping me make sense of using a view, which was life-changing)!
 function getProdSales() {
-    
-    for (var x = 0; x < dptName.length; x++) {
-        var query = (dptName[x]);
-    //Gets the sum of each department, but not necessarily in the order I need...
-    connection.query('WITH temporary_name AS (SELECT department_name, SUM(product_sales) FROM products GROUP BY department_name) SELECT * FROM temporary_name WHERE department_name = "' + query + '";', function(err, res) {
-        if (err) throw err;
-        console.log(res);
-        dptProdSales.push(res[x].val('SUM(product_sales)'));
-        })        
-    }
+    // connection.query('DROP VIEW IF EXISTS productsums;', function(err, res) {
+    //     if (err) throw err;
+    // })
 
-    //Need to find where this goes to continue sequence in sync
-    calculateTotalSales();
+    //Gets the product sums of each department
+    connection.query('CREATE OR REPLACE VIEW productsums AS SELECT d.department_id, p.department_name, SUM(p.product_sales) AS sums FROM products p INNER JOIN departments d ON d.department_name = p.department_name GROUP BY p.department_name;', function(err, res) {
+        if (err) throw err;
+        });
+    connection.query('SELECT sums FROM productsums ORDER BY department_id;', function(err, res) {
+        if (err) throw err;
+        for (var y = 0; y < res.length; y++) {
+            dptProdSales.push(res[y].sums);
+        }
+        
+        console.log(dptProdSales);
+        totalProfit();
+    })
 }
 
+function totalProfit() {
+    for (var t = 0; t < dptProdSales.length; t++) {
+        var tempProd = dptProdSales[t] - dptOverhead[t];
+        dptProfit.push(tempProd); 
+    }
+    calculateTotalSales();
+}
 
 
 //Function to calculate sales and place in arrays for display as table
@@ -99,19 +111,27 @@ function calculateTotalSales() {
             data.push(tempArray);
         }
         console.log(data);
-        showTable();
-    
+        showTable(data);
+        
 }
 
 //Function to populate table
-function showTable() {
+function showTable(data) {
     console.log("Add functionality to show the table");
     
-    var output;
-        
-    output = table(data);
-    
+    var output = table(data);
     console.log(output);
+    restart();
+}
+
+function restart() {
+
+    dptID = [];
+    dptName = [];
+    dptOverhead = [];
+    dptProdSales = [];
+    dptProfit = [];
+
     showMenu();
 }
 
@@ -151,7 +171,7 @@ function createDept() {
         connection.query('INSERT INTO departments (department_name, over_head_costs) VALUES ("' + dptName + '",' + overhead + ');', function(err, res) {
         if (err) throw err;
         console.log('\nDepartments Updated! \nDepartment: ' + dptName + '\nOverhead: ' + overhead);
-        showMenu();
+        restart();
         })
     });
 }
