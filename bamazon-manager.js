@@ -3,6 +3,23 @@ var mysql = require("mysql");
 var inquirer = require('inquirer');
 var PASSWORD = process.env.DB_PASSWORD;
 
+//Global Variables
+var displayProducts;
+var divider = "\n-------------------------------------------------------------\n";
+//Initializes an array of IDs of items in the database for validation purposes
+var possibleIDs = [];
+var idNum = 0;
+var productName;
+var addStock = 0;
+var currentStock = 0;
+//Regex to test if string contains only numbers
+var numTest = /^[0-9]*$/
+//Global for product array
+var allProducts= [];
+//Regex to check for decimal value
+var decCheck = /^\d+(\.\d{0,2})?$/
+var query;
+
 var connection = mysql.createConnection({
     host: "localhost",
   
@@ -40,13 +57,15 @@ function showMenu() {
                 viewLow();
                 break;
             case 'Add to Inventory':
-                addInventory();
+                query = 'inventory';
+                getProdList();
                 break;
             case 'Add New Product':
-                addProduct();
+                query = 'product';
+                getProdList();
                 break;
             case 'Exit':
-                console.log("\nHave a great day!\n");
+                console.log("\nThanks for updating the store. Have a great day!\n");
                 connection.end();
                 break;
             default:
@@ -55,17 +74,14 @@ function showMenu() {
     })
 }
 
-var divider = "\n-------------------------------------------------------------\n";
-
-function viewProducts() {
-    console.log('\nList of all products: ');
+function viewProducts() {     
     connection.query("SELECT * FROM products", function(err, res) {
         if (err) throw err;
         // Log products in readable format
         for (var i = 0; i < res.length; i++) {
             console.log(divider + "Item Id: " + res[i].item_id + "\nProduct Name: " + res[i].product_name + "\nPrice: $" + res[i].price + "\nQuantity: " + res[i].stock_quantity + divider);
         }
-        showMenu();
+       showMenu();
     });
 }
 
@@ -80,14 +96,6 @@ function viewLow() {
         showMenu();
     });
 }
-
-//Initializes an array of IDs of items in the database for validation purposes
-var possibleIDs = [];
-//Initializes globals
-var idNum = 0;
-var productName;
-var addStock = 0;
-var currentStock = 0;
 
 //If a manager selects Add to Inventory, the app displays a prompt that will let the manager "add more" of any item currently in the store
 function addInventory() {
@@ -126,14 +134,27 @@ function promptID() {
             console.log(productName);
             currentStock = res[0].stock_quantity;
             console.log(currentStock);
-            });
-        console.log(idNum);
-        promptQuantity();
+            console.log(idNum);
+            promptQuantity();
+        });
     });    
 }
 
-//Regex to test if string contains only numbers
-var numTest = /^[0-9]*$/
+//Gets an array of products for use in validation later
+function getProdList() {
+    connection.query("SELECT * FROM products", function(err, res) {
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++) {
+            allProducts.push(res[i].product_name.toLowerCase());
+            console.log(divider + "Item Id: " + res[i].item_id + "\nProduct Name: " + res[i].product_name + "\nPrice: $" + res[i].price + "\nQuantity: " + res[i].stock_quantity + divider);
+        }
+        if (query === 'inventory') {
+            addInventory();
+        } else if (query === 'product') {
+            addProduct();
+        }
+    })
+}
 
 //Prompt user for the quantity of stock to add
 function promptQuantity() {
@@ -162,9 +183,6 @@ function promptQuantity() {
     });    
 }
 
-//Regex to check for decimal value
-var decCheck = /^\d+(\.\d{0,2})?$/
-
 //Allows the manager to add a completely new product to the store
 function addProduct() {
     inquirer.prompt([
@@ -172,11 +190,15 @@ function addProduct() {
             type: "input",
             message: "What is the name of the new product? ",
             name: "newName",
-            validate: function(value) {
+            validate: function(value) {    
                 if (value === '') {
-                    console.log("Please enter a product name.");
+                    console.log("\nPlease enter a product name.");
                     return false;
-                } else {
+                } else if (allProducts.includes(value.toLowerCase())) {
+                    console.log("\nThis product is already in the database.")
+                    return false;
+                }
+                else {
                     return true;
                 }
             }
