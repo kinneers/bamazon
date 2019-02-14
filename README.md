@@ -8,14 +8,22 @@ Bamazon is an interactive storefront app that utilizes Node.js and MySQL to crea
 mySQL, JavaScript, Node.js, Inquirer, Table
 
 ### Demo:
-![Demonstration GIF](./)
 
-### Link to Demonstration Video
+#### Customer View:
+![Demonstration GIF](./bamazon-customer.gif)
+
+#### Manager View:
+![Demonstration GIF](./bamazon-manager.gif)
+
+#### Supervisor View:
+![Demonstration GIF](./bamazon-supervisor.gif)
+
+### Link to Full Demonstration Video
 - [Check out the demonstration video here!](https://drive.google.com/file/d/19iTQOkkfAoxg3gHNc22y4XEzUa0raZlF/view)
 
 ## You may clone this repository to download the app:
-If it is not already installed, you will need to install the inquirer, mysql, dotenv, and table npm modules using the npm install command in order for the app to work properly.  You will also need access to a MySQL connection and will need to create a .env file containing the following:
-DB_PASSWORD="[enter your MySQL root password here]"
+If they are not already installed, you will need to install the inquirer, mysql, dotenv, and table npm modules using the npm install command in order for the app to work properly.  You will also need access to a MySQL connection and will need to create a .env file containing:
+DB_PASSWORD="[enter your own MySQL root password here]"
 
 ## Use:
 1. Initialize the database with the bamazon.sql file
