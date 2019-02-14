@@ -2,6 +2,19 @@ require('dotenv').config();
 var mysql = require("mysql");
 var inquirer = require('inquirer');
 var PASSWORD = process.env.DB_PASSWORD;
+const {table} = require('table');
+
+//Initialize global variables
+var chosenProduct;
+var stock = 0;
+var itemNum = 0;
+var price = 0;
+var newQuantity;
+
+//Globals for initial lists of items for table display
+var itemID = [];
+var prod = [];
+var itemPrice = [];
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -42,60 +55,83 @@ function welcome () {
 }
 welcome();
 
-//Divider used for neater output in terminal
-var divider = "\n-------------------------------------------------------------\n";
+//Initializes data array with column headings; data for each row will be populated and pushed to an array which will in turn be pushed to this array for display
+var data = [['Item ID', 'Product Name', 'Price']];
 
-//Initializes an array of IDs of items in the database for validation purposes
-var possibleIDs = [];
-
-//Generates an initial list of items for sale in the store
+//Populates the customer's table
 function listItems() {
-    console.log('\nHere is a list of products available today: ');
-    connection.query("SELECT * FROM products", function(err, res) {
+    console.log('\nProducts Available: ');
+    connection.query('SELECT item_id, product_name, price, stock_quantity FROM products;', function(err, res) {
         if (err) throw err;
-        // Log items for sale in readable format
         for (var i = 0; i < res.length; i++) {
-            possibleIDs.push(res[i].item_id);
-            console.log(divider + "Item Id: " + res[i].item_id + "\nProduct Name: " + res[i].product_name + "\nPrice: $" + res[i].price + divider);
+            itemID.push(res[i].item_id);
+            prod.push(res[i].product_name);
+            itemPrice.push(res[i].price.toFixed(2).toString());
         }
-        promptUser();
-    });
+        prepTable();
+    }); 
 }
 
-//Initialize global variables
-var chosenProduct;
-var stock = 0;
-var itemNum = 0;
-var price = 0;
-var newQuantity;
+//Sorts each array for proper table display
+function prepTable() {
+    for (var j = 0; j < itemID.length; j++) {
+        var tempArray = [];
+        tempArray.push(itemID[j]);
+        tempArray.push(prod[j]);
+        tempArray.push(itemPrice[j]);
+        data.push(tempArray);
+    }
+    showTable(data);
+}
+
+//Function to populate table
+function showTable(data) {
+    var output = table(data);
+    console.log(output);
+    promptUser();
+}
 
 //Prompts the user to enter the ID of product to be purchased
 function promptUser() {
     inquirer.prompt([
         {
-            type: "input",
-            message: "What is the ID of the product you would like to buy?",
-            name: "buyID",
-            validate: function(value) {
-                if (possibleIDs.indexOf(parseInt(value)) === -1) {
-                    return false;
-                } else {
-                    return true;
-                }
-            }
+        type: "list",
+        choices: ['Yes, please', 'No, thanks'],
+        message: "Would you like to make a purchase?",
+        name: "continue",
         }
     ]).then(function(res) {
-        itemNum = res.buyID;
-        console.log(itemNum);
-        //Uses the id to gather the name of the chosen product, current number in stock, and price
-        connection.query("SELECT product_name, stock_quantity, price FROM products WHERE item_id = " + itemNum, function(err, res) {
-        if (err) throw err;
-        chosenProduct = res[0].product_name;
-        stock = res[0].stock_quantity;
-        price = res[0].price;
-        promptAmount(chosenProduct);
-        });
-    })
+        if (res.continue === 'No, thanks') {
+            console.log('\nWe are sorry to see you go. Have a lovely day!\n');
+            connection.end();
+        } else {
+            inquirer.prompt([
+                {
+                type: "input",
+                message: "What is the ID of the product you would like to buy?",
+                name: "buyID",
+                validate: function(value) {
+                    if (itemID.indexOf(parseInt(value)) === -1) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }
+                }
+            ]).then(function(res) {
+                itemNum = res.buyID;
+                console.log("You chose item number: " + itemNum);
+                //Uses the id to gather the name of the chosen product, current number in stock, and price
+                connection.query("SELECT product_name, stock_quantity, price FROM products WHERE item_id = " + itemNum, function(err, res) {
+                if (err) throw err;
+                chosenProduct = res[0].product_name;
+                stock = res[0].stock_quantity;
+                price = res[0].price;
+                promptAmount(chosenProduct);
+                });
+            });
+        }
+    });       
 }
 
 //Regex to test if string contains only numbers

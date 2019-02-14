@@ -2,6 +2,7 @@ require('dotenv').config();
 var mysql = require("mysql");
 var inquirer = require('inquirer');
 var PASSWORD = process.env.DB_PASSWORD;
+const {table} = require('table');
 
 //Global Variables
 var displayProducts;
@@ -19,7 +20,12 @@ var allProducts= [];
 var allDepartments = [];
 //Regex to check for decimal value
 var decCheck = /^\d+(\.\d{0,2})?$/
-var query;
+//Globals for initial lists of items for table display
+var itemID = [];
+var prod = [];
+var itemPrice = [];
+var inStock = [];
+var tempVar;
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -52,18 +58,16 @@ function showMenu() {
         command = res.menu;
         switch (command)  {
             case 'View Products for Sale':
-                viewProducts();
+                listItems();
                 break;
             case 'View Low Inventory':
                 viewLow();
                 break;
             case 'Add to Inventory':
-                query = 'inventory';
                 getProdList();
                 break;
             case 'Add New Product':
-                query = 'product';
-                getProdList();
+                getDptList();
                 break;
             case 'Exit':
                 console.log("\nThanks for updating the store. Have a great day!\n");
@@ -75,27 +79,80 @@ function showMenu() {
     })
 }
 
-function viewProducts() {     
-    connection.query("SELECT * FROM products", function(err, res) {
+//Populates the customer's table
+function listItems() {
+    console.log('\nProducts Available Today: ');
+    connection.query('SELECT item_id, product_name, price, stock_quantity FROM products;', function(err, res) {
         if (err) throw err;
-        // Log products in readable format
         for (var i = 0; i < res.length; i++) {
-            console.log(divider + "Item Id: " + res[i].item_id + "\nProduct Name: " + res[i].product_name + "\nPrice: $" + res[i].price + "\nQuantity: " + res[i].stock_quantity + divider);
+            itemID.push(res[i].item_id);
+            prod.push(res[i].product_name);
+            itemPrice.push(res[i].price.toFixed(2).toString());
+            inStock.push(res[i].stock_quantity);
         }
-       showMenu();
-    });
+        //Initializes data array with column headings; data for each row will be populated and pushed to an array which will in turn be pushed to this array for display
+        var data = [['Item ID', 'Product Name', 'Price', 'Number in Stock']];
+        prepTable(data);
+    }); 
+}
+
+//Sorts each array for proper table display
+function prepTable(data) {
+    for (var j = 0; j < itemID.length; j++) {
+        var tempArray = [];
+        tempArray.push(itemID[j]);
+        tempArray.push(prod[j]);
+        tempArray.push(itemPrice[j]);
+        tempArray.push(inStock[j]);
+        data.push(tempArray);
+    }
+    showTable(data);
+}
+
+//Function to populate table
+function showTable(data) {
+    var output = table(data);
+    console.log(output);
+    //Resets table to headings
+    restart();
+}
+
+function restart() {
+    itemID = [];
+    prod = [];
+    itemPrice = [];
+    inStock = [];
+    tempVar = 10;
+    showMenu();
 }
 
 function viewLow() {
     console.log("\nProducts with Low Inventory: ");
     connection.query("SELECT * FROM products WHERE stock_quantity < 5", function(err, res) {
         if (err) throw err;
-        // Log products in readable format
+        // Gathers data in table arrays
         for (var i = 0; i < res.length; i++) {
+            itemID.push(res[i].item_id);
+            prod.push(res[i].product_name);
+            itemPrice.push(res[i].price.toFixed(2).toString());
+            inStock.push(res[i].stock_quantity);
+        }
+        //Initializes data array with column headings; data for each row will be populated and pushed to an array which will in turn be pushed to this array for display
+        var data = [['Item ID', 'Product Name', 'Price', 'Number in Stock']];
+        prepTable(data);
+    });
+}
+
+//Gets an array of products for use in validation later
+function getProdList() {
+    connection.query("SELECT * FROM products", function(err, res) {
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++) {
+            allProducts.push(res[i].product_name.toLowerCase());
             console.log(divider + "Item Id: " + res[i].item_id + "\nProduct Name: " + res[i].product_name + "\nPrice: $" + res[i].price + "\nQuantity: " + res[i].stock_quantity + divider);
         }
-        showMenu();
-    });
+        addInventory();
+    })
 }
 
 //If a manager selects Add to Inventory, the app displays a prompt that will let the manager "add more" of any item currently in the store
@@ -130,32 +187,11 @@ function promptID() {
         //Uses the id to gather the name of the chosen product and current number in stock
         connection.query("SELECT product_name, stock_quantity FROM products WHERE item_id = " + idNum, function(err, res) {
             if (err) throw err;
-            console.log(res);
             productName = res[0].product_name;
-            console.log(productName);
             currentStock = res[0].stock_quantity;
-            console.log(currentStock);
-            console.log(idNum);
             promptQuantity();
         });
     });
-}
-
-//Gets an array of products for use in validation later
-function getProdList() {
-    connection.query("SELECT * FROM products", function(err, res) {
-        if (err) throw err;
-        for (var i = 0; i < res.length; i++) {
-            allProducts.push(res[i].product_name.toLowerCase());
-            allDepartments.push(res[i].department_name.toLowerCase());
-            console.log(divider + "Item Id: " + res[i].item_id + "\nProduct Name: " + res[i].product_name + "\nPrice: $" + res[i].price + "\nQuantity: " + res[i].stock_quantity + divider);
-        }
-        if (query === 'inventory') {
-            addInventory();
-        } else if (query === 'product') {
-            addProduct();
-        }
-    })
 }
 
 //Prompt user for the quantity of stock to add
@@ -183,6 +219,17 @@ function promptQuantity() {
         showMenu();
         });
     });    
+}
+
+//Gets an array of departments for use in validation later
+function getDptList() {
+    connection.query("SELECT * FROM departments", function(err, res) {
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++) {
+            allDepartments.push(res[i].department_name.toLowerCase());
+        }
+        addProduct();
+    })
 }
 
 //Allows the manager to add a completely new product to the store
@@ -214,6 +261,7 @@ function addProduct() {
                     console.log("Please enter a department.");
                     return false;
                 } else if (!allDepartments.includes(value.toLowerCase())) {
+                    console.log(allDepartments);
                     console.log("\nThis department does not exist. Please enter an existing department. If a department needs to be added, please press Control-C and seek out a supervisor.");
                     return false;
                 } else {

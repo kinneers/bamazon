@@ -90,7 +90,6 @@ function totalProfit() {
 
 //Function to calculate sales and place in arrays for display as table
 function calculateTotalSales() {
-
     for (var j = 0; j < dptID.length; j++) {
         var tempArray = [];
         tempArray.push(dptID[j]);
