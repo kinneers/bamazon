@@ -5,8 +5,6 @@ var PASSWORD = process.env.DB_PASSWORD;
 const {table} = require('table');
 
 //Global Variables
-var displayProducts;
-var divider = "\n-------------------------------------------------------------\n";
 //Initializes an array of IDs of items in the database for validation purposes
 var possibleIDs = [];
 var idNum = 0;
@@ -147,11 +145,34 @@ function getProdList() {
         if (err) throw err;
         for (var i = 0; i < res.length; i++) {
             allProducts.push(res[i].product_name.toLowerCase());
-            console.log(divider + "Item Id: " + res[i].item_id + "\nProduct Name: " + res[i].product_name + "\nPrice: $" + res[i].price + "\nQuantity: " + res[i].stock_quantity + divider);
+            itemID.push(res[i].item_id);
+            prod.push(res[i].product_name);
         }
-        addInventory();
-    })
+        //Initializes data array with column headings; data for each row will be populated and pushed to an array which will in turn be pushed to this array for display
+        var data = [['Item ID', 'Product Name']];
+        prepInventoryTable(data);
+    }); 
 }
+    
+//Sorts each array for proper table display
+function prepInventoryTable(data) {
+    for (var j = 0; j < itemID.length; j++) {
+        var tempArray = [];
+        tempArray.push(itemID[j]);
+        tempArray.push(prod[j]);
+        data.push(tempArray);
+    }
+    showInventoryTable(data);
+}
+
+//Function to populate table
+function showInventoryTable(data) {
+    var output = table(data);
+    console.log(output);
+    //Resets table to headings
+    addInventory();
+}
+
 
 //If a manager selects Add to Inventory, the app displays a prompt that will let the manager "add more" of any item currently in the store
 function addInventory() {
@@ -160,6 +181,7 @@ function addInventory() {
         if (err) throw err;
         for (var i = 0; i < res.length; i++) {
             possibleIDs.push(res[i].item_id);
+
         }   
     });
     promptID();
