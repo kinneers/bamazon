@@ -181,7 +181,6 @@ function addInventory() {
         if (err) throw err;
         for (var i = 0; i < res.length; i++) {
             possibleIDs.push(res[i].item_id);
-
         }   
     });
     promptID();
@@ -236,7 +235,7 @@ function promptQuantity() {
         connection.query("UPDATE products SET stock_quantity = " + newQuantity + " WHERE item_id = " + idNum, function(err, res) {
         if (err) throw err;
         console.log("\nThere are now " + newQuantity + " " + productName + "\n");
-        showMenu();
+        restart();
         });
     });    
 }

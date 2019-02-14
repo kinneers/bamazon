@@ -132,11 +132,11 @@ function promptUser() {
                 console.log("You chose item number: " + itemNum);
                 //Uses the id to gather the name of the chosen product, current number in stock, and price
                 connection.query("SELECT product_name, stock_quantity, price FROM products WHERE item_id = " + itemNum, function(err, res) {
-                if (err) throw err;
-                chosenProduct = res[0].product_name;
-                stock = res[0].stock_quantity;
-                price = res[0].price;
-                promptAmount(chosenProduct);
+                    if (err) throw err;
+                    chosenProduct = res[0].product_name;
+                    stock = res[0].stock_quantity;
+                    price = res[0].price;
+                    promptAmount(chosenProduct);
                 });
             });
         }
@@ -209,7 +209,7 @@ function fulfill() {
                 completeSale(itemNum, currentSales, total);
             });
             //Displays the total cost of the customer's purchase
-            console.log("Thank you for your order! \nYour total comes to: $" + total + "\n");
+            console.log("Thank you for your order! \nYour total comes to: $" + total.toFixed(2).toString() + "\n");
         }
     );
 }
