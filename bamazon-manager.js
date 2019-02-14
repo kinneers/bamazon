@@ -14,8 +14,9 @@ var addStock = 0;
 var currentStock = 0;
 //Regex to test if string contains only numbers
 var numTest = /^[0-9]*$/
-//Global for product array
+//Globals for product and dpt arrays
 var allProducts= [];
+var allDepartments = [];
 //Regex to check for decimal value
 var decCheck = /^\d+(\.\d{0,2})?$/
 var query;
@@ -146,6 +147,7 @@ function getProdList() {
         if (err) throw err;
         for (var i = 0; i < res.length; i++) {
             allProducts.push(res[i].product_name.toLowerCase());
+            allDepartments.push(res[i].department_name.toLowerCase());
             console.log(divider + "Item Id: " + res[i].item_id + "\nProduct Name: " + res[i].product_name + "\nPrice: $" + res[i].price + "\nQuantity: " + res[i].stock_quantity + divider);
         }
         if (query === 'inventory') {
@@ -210,6 +212,9 @@ function addProduct() {
             validate: function(value) {
                 if (value === '') {
                     console.log("Please enter a department.");
+                    return false;
+                } else if (!allDepartments.includes(value.toLowerCase())) {
+                    console.log("\nThis department does not exist. Please enter an existing department. If a department needs to be added, please press Control-C and seek out a supervisor.");
                     return false;
                 } else {
                     return true;
