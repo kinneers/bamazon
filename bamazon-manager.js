@@ -281,7 +281,7 @@ function addProduct() {
                     console.log("Please enter a department.");
                     return false;
                 } else if (!allDepartments.includes(value.toLowerCase())) {
-                    console.log(allDepartments);
+                    console.log("\nExisting Departments: " + allDepartments);
                     console.log("\nThis department does not exist. Please enter an existing department. If a department needs to be added, please press Control-C and seek out a supervisor.");
                     return false;
                 } else {
