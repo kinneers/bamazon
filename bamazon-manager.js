@@ -25,7 +25,6 @@ var itemID = [];
 var prod = [];
 var itemPrice = [];
 var inStock = [];
-var tempVar;
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -122,7 +121,6 @@ function restart() {
     prod = [];
     itemPrice = [];
     inStock = [];
-    tempVar = 10;
     showMenu();
 }
 

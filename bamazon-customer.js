@@ -10,6 +10,7 @@ var stock = 0;
 var itemNum = 0;
 var price = 0;
 var newQuantity;
+var itemIDs = [];
 
 //Globals for initial lists of items for table display
 var itemID = [];
@@ -55,25 +56,26 @@ function welcome () {
 }
 welcome();
 
-//Initializes data array with column headings; data for each row will be populated and pushed to an array which will in turn be pushed to this array for display
-var data = [['Item ID', 'Product Name', 'Price']];
-
 //Populates the customer's table
 function listItems() {
+    //Initializes data array with column headings; data for each row will be populated and pushed to an array which will in turn be pushed to this array for display
+    var data = [['Item ID', 'Product Name', 'Price']];
     console.log('\nProducts Available: ');
     connection.query('SELECT item_id, product_name, price, stock_quantity FROM products;', function(err, res) {
         if (err) throw err;
         for (var i = 0; i < res.length; i++) {
+            //The first of the item IDs arrays will not be cleared as it needs to be used later for validation
+            itemIDs.push(res[i].item_id);
             itemID.push(res[i].item_id);
             prod.push(res[i].product_name);
             itemPrice.push(res[i].price.toFixed(2).toString());
         }
-        prepTable();
+        prepTable(data);
     }); 
 }
 
 //Sorts each array for proper table display
-function prepTable() {
+function prepTable(data) {
     for (var j = 0; j < itemID.length; j++) {
         var tempArray = [];
         tempArray.push(itemID[j]);
@@ -88,6 +90,13 @@ function prepTable() {
 function showTable(data) {
     var output = table(data);
     console.log(output);
+    resetTable();
+}
+
+function resetTable() {
+    itemID = [];
+    prod = [];
+    itemPrice = [];
     promptUser();
 }
 
@@ -111,7 +120,7 @@ function promptUser() {
                 message: "What is the ID of the product you would like to buy?",
                 name: "buyID",
                 validate: function(value) {
-                    if (itemID.indexOf(parseInt(value)) === -1) {
+                    if (itemIDs.indexOf(parseInt(value)) === -1) {
                         return false;
                     } else {
                         return true;
