@@ -137,7 +137,7 @@ function promptID() {
             console.log(idNum);
             promptQuantity();
         });
-    });    
+    });
 }
 
 //Gets an array of products for use in validation later
@@ -245,7 +245,8 @@ function addProduct() {
         var dept = res.newDept;
         var prodPrice = parseFloat(res.newPrice);
         var quant = parseInt(res.newStock);
-        connection.query('INSERT INTO products (product_name, department_name, price, stock_quantity) VALUES("' + prod + '", "' + dept + '", ' + prodPrice + ', ' + quant + ');', function(err, res) {
+        var beginSales = 0;
+        connection.query('INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales) VALUES("' + prod + '", "' + dept + '", ' + prodPrice + ', ' + quant + ', ' + beginSales + ');', function(err, res) {
         if (err) throw err;
         console.log("\nStore Updated! \nProduct: " + prod + "\nDepartment: " + dept + "\nPrice: $" + prodPrice + "\nQuantity: " + quant + "\n");
         showMenu();
