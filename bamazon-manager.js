@@ -190,6 +190,7 @@ function addInventory() {
 function promptID() {
     inquirer.prompt([
         {
+            
             type: "input",
             message: "What is the ID of the product you would like to update?",
             name: "updateID",
