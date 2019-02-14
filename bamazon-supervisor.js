@@ -74,7 +74,7 @@ function getProdSales() {
     connection.query('SELECT sums FROM productsums ORDER BY department_id;', function(err, res) {
         if (err) throw err;
         for (var y = 0; y < res.length; y++) {
-            dptProdSales.push(res[y].sums);
+            dptProdSales.push(res[y].sums.toFixed(2).toString());
         }
         totalProfit();
     })
@@ -83,7 +83,7 @@ function getProdSales() {
 function totalProfit() {
     for (var t = 0; t < dptProdSales.length; t++) {
         var tempProd = dptProdSales[t] - dptOverhead[t];
-        dptProfit.push(tempProd); 
+        dptProfit.push(tempProd.toFixed(2).toString()); 
     }
     calculateTotalSales();
 }
