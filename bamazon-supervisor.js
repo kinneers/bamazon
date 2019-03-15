@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 require('dotenv').config();
 var mysql = require('mysql');
 var inquirer = require('inquirer');
@@ -16,6 +17,7 @@ var decCheck = /^\d+(\.\d{0,2})?$/
 //Needed for dept name validation
 var dptList = [];
 
+//Creates connection
 var connection = mysql.createConnection({
     host: 'localhost',
     port: 3306,
@@ -24,6 +26,7 @@ var connection = mysql.createConnection({
     database: 'bamazon'
 });
 
+//Initializes connection
 connection.connect(function(err) {
     if (err) throw err;
         showMenu();
@@ -39,6 +42,7 @@ function showMenu() {
             name: 'menu'
         }
     ]).then(function(res) {
+        //Calls supervisor-level functions when selected
         if (res.menu === 'View Product Sales by Department') {
             selectData();
         } else if (res.menu === 'Create New Department') {
@@ -68,9 +72,9 @@ function selectData() {
 //Many thanks to Billy Sterling "The SQL-izer" for helping me learn to utilize VIEW!
 function getProdSales() {
     //Gets the product sums of each department
-    connection.query('CREATE OR REPLACE VIEW productsums AS SELECT d.department_id, p.department_name, SUM(p.product_sales) AS sums FROM products p INNER JOIN departments d ON d.department_name = p.department_name GROUP BY p.department_name;', function(err, res) {
+    connection.query('CREATE OR REPLACE VIEW productsums AS SELECT d.department_id, p.department_name, SUM(p.product_sales) AS sums FROM products p INNER JOIN departments d ON d.department_name = p.department_name GROUP BY p.department_name;', function(err) {
         if (err) throw err;
-        });
+    });
     connection.query('SELECT sums FROM productsums ORDER BY department_id;', function(err, res) {
         if (err) throw err;
         for (var y = 0; y < res.length; y++) {
@@ -80,6 +84,7 @@ function getProdSales() {
     })
 }
 
+//Calculates the total product sales per department
 function totalProfit() {
     for (var t = 0; t < dptProdSales.length; t++) {
         var tempProd = dptProdSales[t] - dptOverhead[t];
@@ -109,6 +114,7 @@ function showTable(data) {
     restart();
 }
 
+//Resets variables
 function restart() {
     dptID = [];
     dptName = [];
@@ -162,12 +168,13 @@ function createDept() {
             }
         }
     ]).then(function(res) {
+        //Adds new department to the database
         dptName = res.newDeptName;
-        overhead = res.overhead;
-        connection.query('INSERT INTO departments (department_name, over_head_costs) VALUES ("' + dptName + '",' + overhead + ');', function(err, res) {
-        if (err) throw err;
-        console.log('\nDepartments Updated! \nDepartment: ' + dptName + '\nOverhead: ' + overhead);
-        restart();
+        var overhead = res.overhead;
+        connection.query('INSERT INTO departments (department_name, over_head_costs) VALUES ("' + dptName + '",' + overhead + ');', function(err) {
+            if (err) throw err;
+            console.log('\nDepartments Updated! \nDepartment: ' + dptName + '\nOverhead: ' + overhead);
+            restart();
         })
     });
 }

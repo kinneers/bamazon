@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 require('dotenv').config();
 var mysql = require("mysql");
 var inquirer = require('inquirer');
@@ -17,6 +18,7 @@ var itemID = [];
 var prod = [];
 var itemPrice = [];
 
+//Creates database connection
 var connection = mysql.createConnection({
     host: "localhost",
   
@@ -31,6 +33,7 @@ var connection = mysql.createConnection({
     database: "bamazon"
 });
 
+//Initializes connection
 connection.connect(function(err) {
     if (err) throw err;
 });
@@ -93,6 +96,7 @@ function showTable(data) {
     resetTable();
 }
 
+//Function to reset the table
 function resetTable() {
     itemID = [];
     prod = [];
@@ -164,6 +168,7 @@ function promptAmount(chosenProduct) {
             }
         }
     ]).then(function(res) {
+        //Determines whether adequate stock exists for fulfillment and, if not, prompts user to try again
         buyNumber = parseInt(res.purchaseNum);
         if (buyNumber <= stock) {
             newQuantity = stock - buyNumber;
@@ -200,7 +205,7 @@ function fulfill() {
                 item_id: itemNum
             }
         ],
-        function(err, res) {
+        function() {
             var total = buyNumber * price;
             //Gets the product_sales amount prior to the transaction
             connection.query("SELECT product_sales FROM products WHERE item_id = " + itemNum, function(err, res) {
@@ -214,7 +219,7 @@ function fulfill() {
     );
 }
 
-//
+//Updates the product sales table to reflect new sale
 function completeSale(itemNum, currentSales, total) {
     var newSales = currentSales + total;
     connection.query("UPDATE products SET ? WHERE ?",
@@ -226,7 +231,7 @@ function completeSale(itemNum, currentSales, total) {
                 item_id: itemNum
             }
         ],
-        function(err, res) {
+        function() {
             buyAgain();
         }
     );

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 require('dotenv').config();
 var mysql = require("mysql");
 var inquirer = require('inquirer');
@@ -24,6 +25,7 @@ var prod = [];
 var itemPrice = [];
 var inStock = [];
 
+//Creates connection
 var connection = mysql.createConnection({
     host: "localhost",
   
@@ -38,11 +40,13 @@ var connection = mysql.createConnection({
     database: "bamazon"
 });
 
+//Initializes connection
 connection.connect(function(err) {
     if (err) throw err;
     showMenu();
 });
 
+//Displays the manager's menu options
 function showMenu() {
     inquirer.prompt([
         {
@@ -52,7 +56,8 @@ function showMenu() {
             name: 'menu'
         }
     ]).then(function(res) {
-        command = res.menu;
+        //Calls manager-level functions
+        var command = res.menu;
         switch (command)  {
             case 'View Products for Sale':
                 listItems();
@@ -76,7 +81,7 @@ function showMenu() {
     })
 }
 
-//Populates the customer's table
+//Populates the product table
 function listItems() {
     console.log('\nProducts Available Today: ');
     connection.query('SELECT item_id, product_name, price, stock_quantity FROM products;', function(err, res) {
@@ -114,6 +119,7 @@ function showTable(data) {
     restart();
 }
 
+//Function to reset product table values
 function restart() {
     itemID = [];
     prod = [];
@@ -122,6 +128,7 @@ function restart() {
     showMenu();
 }
 
+//Displays table of products with low inventory (less than 5 items)
 function viewLow() {
     console.log("\nProducts with Low Inventory: ");
     connection.query("SELECT * FROM products WHERE stock_quantity < 5", function(err, res) {
@@ -173,7 +180,6 @@ function showInventoryTable(data) {
     addInventory();
 }
 
-
 //If a manager selects Add to Inventory, the app displays a prompt that will let the manager "add more" of any item currently in the store
 function addInventory() {
     //Gather an array or all possible IDs for validation purposes
@@ -190,7 +196,6 @@ function addInventory() {
 function promptID() {
     inquirer.prompt([
         {
-            
             type: "input",
             message: "What is the ID of the product you would like to update?",
             name: "updateID",
@@ -233,10 +238,10 @@ function promptQuantity() {
         addStock = res.numToAdd;
         var newQuantity = parseInt(currentStock) + parseInt(addStock);
         //Updates the database to reflect the added stock
-        connection.query("UPDATE products SET stock_quantity = " + newQuantity + " WHERE item_id = " + idNum, function(err, res) {
-        if (err) throw err;
-        console.log("\nThere are now " + newQuantity + " " + productName + "\n");
-        restart();
+        connection.query("UPDATE products SET stock_quantity = " + newQuantity + " WHERE item_id = " + idNum, function(err) {
+            if (err) throw err;
+            console.log("\nThere are now " + newQuantity + " " + productName + "\n");
+            restart();
         });
     });    
 }
@@ -319,10 +324,10 @@ function addProduct() {
         var prodPrice = parseFloat(res.newPrice);
         var quant = parseInt(res.newStock);
         var beginSales = 0;
-        connection.query('INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales) VALUES("' + prod + '", "' + dept + '", ' + prodPrice + ', ' + quant + ', ' + beginSales + ');', function(err, res) {
-        if (err) throw err;
-        console.log("\nStore Updated! \nProduct: " + prod + "\nDepartment: " + dept + "\nPrice: $" + prodPrice + "\nQuantity: " + quant + "\n");
-        showMenu();
+        connection.query('INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales) VALUES("' + prod + '", "' + dept + '", ' + prodPrice + ', ' + quant + ', ' + beginSales + ');', function(err) {
+            if (err) throw err;
+            console.log("\nStore Updated! \nProduct: " + prod + "\nDepartment: " + dept + "\nPrice: $" + prodPrice + "\nQuantity: " + quant + "\n");
+            showMenu();
         });
     });      
 }
